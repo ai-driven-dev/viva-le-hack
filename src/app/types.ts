@@ -145,3 +145,41 @@ export const GuardrailOutputZod = z.object({
 });
 
 export type GuardrailOutput = z.infer<typeof GuardrailOutputZod>;
+
+
+// Health tracking types
+export interface HealthData {
+  sleepDuration: number; // in hours
+  bodyTemperature: number; // in Celsius
+  bpm: number; // beats per minute
+  timestamp: string;
+}
+
+export interface HealthAnalysis {
+  status: "excellent" | "good" | "moderate" | "poor";
+  summary: string;
+  recommendations: string[];
+  concerns: string[];
+  scores: {
+    sleep: number; // 0-100
+    temperature: number; // 0-100
+    heartRate: number; // 0-100
+    overall: number; // 0-100
+  };
+}
+
+export interface DailyHealthReport {
+  data: HealthData;
+  analysis: HealthAnalysis;
+  createdAt: string;
+}
+
+// Zod schemas for validation
+export const HealthDataSchema = z.object({
+  sleepDuration: z.number().min(0).max(24),
+  bodyTemperature: z.number().min(35).max(42),
+  bpm: z.number().min(40).max(200),
+  timestamp: z.string().optional(),
+});
+
+export type HealthDataInput = z.infer<typeof HealthDataSchema>;
