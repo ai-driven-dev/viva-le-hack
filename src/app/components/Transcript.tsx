@@ -2,8 +2,28 @@
 
 import { useTranscript } from "@/app/contexts/TranscriptContext";
 import { SessionStatus, TranscriptItem } from "@/app/types";
+import { ClipboardCopyIcon } from "@radix-ui/react-icons";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+
+const getTitleEmoji = (title: string): string => {
+  const emojiMap: { [key: string]: string } = {
+    'orchestrator': '🎭',
+    'transfer_to_healthAgent': '🏥',
+    'get_today_health_report': '📊',
+    'analyze_health_trends': '📈',
+    'transfer_to_orchestrator': '🎭',
+    'transfer_to_memoryAgent': '🧠',
+    'get_previous_conversations': '💭',
+    'get_weather': '☀️',
+    'search_good_news': '📰',
+    'transfer_to_softMorningPodcastAgent': '🎧',
+    'transfer_to_alterEgo': '🤖',
+    'undefined': '✨'
+  };
+
+  return emojiMap[title] || title;
+};
 
 export interface TranscriptProps {
   userText: string;
@@ -33,6 +53,7 @@ function Transcript({
   const { transcriptItems } = useTranscript();
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const [prevLogs, setPrevLogs] = useState<TranscriptItem[]>([]);
+  const [justCopied, setJustCopied] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   function scrollToBottom() {
@@ -65,10 +86,16 @@ function Transcript({
     }
   }, [canSend]);
 
-  // Filter to show only MESSAGE type items (no breadcrumbs)
-  const messageItems = transcriptItems
-    .filter((item) => item.type === "MESSAGE" && !item.isHidden)
-    .sort((a, b) => a.createdAtMs - b.createdAtMs);
+  const handleCopyTranscript = async () => {
+    if (!transcriptRef.current) return;
+    try {
+      await navigator.clipboard.writeText(transcriptRef.current.innerText);
+      setJustCopied(true);
+      setTimeout(() => setJustCopied(false), 1500);
+    } catch (error) {
+      console.error("Failed to copy transcript:", error);
+    }
+  };
 
   const getStatusColor = () => {
     switch (sessionStatus) {
@@ -93,9 +120,9 @@ function Transcript({
   };
 
   return (
-    <div className="flex flex-col h-full max-w-md mx-auto w-full">
-      {/* Status indicator */}
-      <div className="flex items-center justify-center mb-6">
+    <div className="flex flex-col h-full max-w-4xl mx-auto w-full">
+      {/* Status and Controls */}
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
           {/* Connection Status */}
           <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30">
@@ -139,69 +166,151 @@ function Transcript({
             </div>
           </button>
         </div>
+
+        {/* Transcript Controls */}
+        <div className="flex gap-2">
+          <button
+            onClick={handleCopyTranscript}
+            className="px-4 py-2 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white flex items-center gap-2"
+          >
+            <ClipboardCopyIcon className="w-4 h-4" />
+            <span>{justCopied ? "Copied!" : "Copy"}</span>
+          </button>
+        </div>
       </div>
 
-      {/* Transcript Messages */}
-      <div className="flex-1 mb-6 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 overflow-hidden">
+      {/* Transcript Content */}
+      <div className="flex-1 mb-4 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 overflow-hidden">
         <div
           ref={transcriptRef}
           className="overflow-auto p-6 flex flex-col gap-4 h-full"
         >
-          {messageItems.length === 0 ? (
+          {transcriptItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-white/70 text-center">
               <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center mb-4">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" fill="currentColor" />
-                  <path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"
+                    fill="currentColor"
+                  />
+                  <path
+                    d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </div>
               <p className="text-lg font-medium mb-2">Ready to chat</p>
               <p className="text-sm">Start speaking or type a message</p>
             </div>
           ) : (
-            messageItems.map((item) => {
-              const { itemId, role, title = "" } = item;
-              const isUser = role === "user";
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-row flex-wrap gap-2 justify-center items-center w-full">
+                  {[...transcriptItems]
+                    .sort((a, b) => a.createdAtMs - b.createdAtMs)
+                    .map((item) => {
+                      const {
+                        itemId,
+                        type,
+                        isHidden,
+                        title = "",
+                      } = item;
 
-              return (
-                <div
-                  key={itemId}
-                  className={`flex ${isUser ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[80%] px-4 py-3 rounded-2xl ${isUser
-                      ? "bg-white/20 backdrop-blur-sm border border-white/30 text-white ml-4"
-                      : "bg-white/90 backdrop-blur-sm border border-white/20 text-gray-800 mr-4"
-                      }`}
-                  >
-                    <div className="prose prose-sm max-w-none">
-                      <ReactMarkdown
-                        components={{
-                          p: ({ children }) => <p className="mb-0 last:mb-0">{children}</p>,
-                          ul: ({ children }) => <ul className="mb-0 pl-4">{children}</ul>,
-                          ol: ({ children }) => <ol className="mb-0 pl-4">{children}</ol>,
-                          li: ({ children }) => <li className="mb-1">{children}</li>,
-                          code: ({ children }) => (
-                            <code className={`px-1 py-0.5 rounded text-xs ${isUser ? "bg-white/20" : "bg-gray-200"
-                              }`}>
-                              {children}
-                            </code>
-                          ),
-                          pre: ({ children }) => (
-                            <pre className={`p-2 rounded-lg text-xs overflow-x-auto ${isUser ? "bg-white/20" : "bg-gray-100"
-                              }`}>
-                              {children}
-                            </pre>
-                          ),
-                        }}
-                      >
-                        {title}
-                      </ReactMarkdown>
-                    </div>
-                  </div>
+                      if (isHidden) return null;
+
+                      if (type === "BREADCRUMB") {
+                        return (
+                          <span
+                            key={itemId}
+                            className="inline-block"
+                          >
+                            <span className="text-2xl">{getTitleEmoji(title)}</span>
+                          </span>
+                        );
+                      }
+                      return null;
+                    })}
                 </div>
-              );
-            })
+                <div className="flex flex-col gap-4">
+                  {[...transcriptItems]
+                    .sort((a, b) => a.createdAtMs - b.createdAtMs)
+                    .map((item) => {
+                      const {
+                        itemId,
+                        type,
+                        role,
+                        isHidden,
+                        title = "",
+                      } = item;
+
+                      if (isHidden) return null;
+
+                      if (type === "MESSAGE") {
+                        const isUser = role === "user";
+                        return (
+                          <div
+                            key={itemId}
+                            className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                          >
+                            <div
+                              className={`max-w-[80%] px-4 py-3 rounded-2xl ${isUser
+                                ? "bg-white/20 backdrop-blur-sm border border-white/30 text-white"
+                                : "bg-white/90 backdrop-blur-sm border border-white/20 text-gray-800"
+                                }`}
+                            >
+                              <div className="text-xs opacity-70 mb-1">{item.timestamp}</div>
+                              <div className="prose prose-sm max-w-none">
+                                <ReactMarkdown
+                                  components={{
+                                    p: ({ children }) => (
+                                      <p className="mb-0 last:mb-0">{children}</p>
+                                    ),
+                                    ul: ({ children }) => (
+                                      <ul className="mb-0 pl-4">{children}</ul>
+                                    ),
+                                    ol: ({ children }) => (
+                                      <ol className="mb-0 pl-4">{children}</ol>
+                                    ),
+                                    li: ({ children }) => (
+                                      <li className="mb-1">{children}</li>
+                                    ),
+                                    code: ({ children }) => (
+                                      <code
+                                        className={`px-1 py-0.5 rounded text-xs ${isUser ? "bg-white/20" : "bg-gray-200"
+                                          }`}
+                                      >
+                                        {children}
+                                      </code>
+                                    ),
+                                    pre: ({ children }) => (
+                                      <pre
+                                        className={`p-2 rounded-lg text-xs overflow-x-auto ${isUser ? "bg-white/20" : "bg-gray-100"
+                                          }`}
+                                      >
+                                        {children}
+                                      </pre>
+                                    ),
+                                  }}
+                                >
+                                  {title}
+                                </ReactMarkdown>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })}
+                </div>
+              </div>
           )}
         </div>
       </div>

@@ -133,7 +133,7 @@ function App() {
       const currentAgent = selectedAgentConfigSet.find(
         (a) => a.name === selectedAgentName
       );
-      addTranscriptBreadcrumb(`Agent: ${selectedAgentName}`, currentAgent);
+      addTranscriptBreadcrumb(`${selectedAgentName}`, currentAgent);
       updateSession(true);
     }
   }, [selectedAgentConfigSet, selectedAgentName, sessionStatus]);
@@ -435,7 +435,7 @@ function App() {
           }
 
           // Surface function / hand-off calls as breadcrumbs
-          const title = `Tool call: ${(item as any).name}`;
+          const title = `${(item as any).name}`;
 
           if (!loggedFunctionCallsRef.current.has(item.itemId)) {
             addTranscriptBreadcrumb(title, {
