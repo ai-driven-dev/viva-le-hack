@@ -148,11 +148,19 @@ export type GuardrailOutput = z.infer<typeof GuardrailOutputZod>;
 
 
 // Health tracking types
+export interface UserInfo {
+  firstName: string;
+  lastName: string;
+  city: string;
+}
+
 export interface HealthData {
   sleepDuration: number; // in hours
   bodyTemperature: number; // in Celsius
   bpm: number; // beats per minute
   timestamp: string;
+  city: string; // Current city of the user
+  date?: string; // Optional date for testing (YYYY-MM-DD format)
 }
 
 export interface HealthAnalysis {
@@ -166,6 +174,8 @@ export interface HealthAnalysis {
     heartRate: number; // 0-100
     overall: number; // 0-100
   };
+  cityChanged?: boolean; // Indicates if the user's city has changed since last report
+  previousCity?: string; // Previous city if changed
 }
 
 export interface DailyHealthReport {
@@ -174,12 +184,31 @@ export interface DailyHealthReport {
   createdAt: string;
 }
 
+export interface UserHealthStorage {
+  userInfo: UserInfo;
+  reports: {
+    [date: string]: DailyHealthReport;
+  };
+}
+
 // Zod schemas for validation
+export const UserInfoSchema = z.object({
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  city: z.string().min(1),
+});
+
 export const HealthDataSchema = z.object({
   sleepDuration: z.number().min(0).max(24),
   bodyTemperature: z.number().min(35).max(42),
   bpm: z.number().min(40).max(200),
   timestamp: z.string().optional(),
+  city: z.string().min(1),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(), // YYYY-MM-DD format
 });
 
 export type HealthDataInput = z.infer<typeof HealthDataSchema>;
+export type UserInfoInput = z.infer<typeof UserInfoSchema>;

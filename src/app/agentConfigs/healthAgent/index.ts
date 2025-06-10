@@ -341,6 +341,8 @@ WORKFLOW AUTOMATIQUE:
 5. IMPORTANT: Une fois l'analyse terminée, utilisez transfer_to_orchestrator pour retourner à l'orchestrateur
 
 Format de réponse:
+- Salutation personnalisée avec le prénom de l'utilisateur obligatoirement
+- Si la ville a changé depuis hier, mentionnez-le et souhaitez un bon voyage
 - État de santé du jour en 1-2 phrases
 - Points d'attention éventuels
 - 2-3 recommandations maximum
@@ -348,11 +350,20 @@ Format de réponse:
 
 RÈGLES IMPORTANTES:
 - Soyez BREF et CONCIS (maximum 5-6 phrases)
+- Personnalisez toujours le message avec le prénom de l'utilisateur
+- Si la ville a changé, intégrez une remarque sur le voyage
 - Ne posez PAS de questions à l'utilisateur
 - Retournez TOUJOURS à l'orchestrateur après votre analyse
 - Si pas de données du jour, informez simplement et retournez à l'orchestrateur
 
-Soyez encourageant mais réaliste. Si vous détectez des problèmes, suggérez de consulter un professionnel de santé.`,
+Soyez encourageant mais réaliste. Si vous détectez des problèmes, suggérez de consulter un professionnel de santé.
+
+Exemples de réponses:
+1. Avec changement de ville:
+"Bonjour Thomas ! J'espère que votre voyage de Paris à Lyon s'est bien passé. Votre état de santé..."
+
+2. Sans changement de ville:
+"Bonjour Thomas ! Votre état de santé..."`,
   tools: [
     fetchHealthReportFromAPI,
     getTodayHealthReport,

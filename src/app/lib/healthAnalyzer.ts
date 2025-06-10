@@ -133,7 +133,7 @@ export class HealthAnalyzer {
       minute: "2-digit",
     });
 
-    let summary = `Bonjour ! Il est ${time}. Votre état de santé ce matin est ${
+    let summary = `Il est ${time}. Votre état de santé ce matin est ${
       status === "excellent"
         ? "excellent"
         : status === "good"
@@ -207,6 +207,16 @@ export class HealthAnalyzer {
       }
     }
 
+    // Travel-related recommendations if city changed
+    if (data.city) {
+      recommendations.push(
+        "Maintenez vos bonnes habitudes de santé même en déplacement"
+      );
+      recommendations.push(
+        "Pensez à bien vous hydrater et à respecter vos heures de sommeil malgré le changement d'environnement"
+      );
+    }
+
     // General recommendations
     if (recommendations.length === 0) {
       recommendations.push("Continuez vos bonnes habitudes de santé");
@@ -248,6 +258,20 @@ export class HealthAnalyzer {
       concerns.push(
         "Combinaison de manque de sommeil et de stress cardiovasculaire"
       );
+    }
+
+    // Travel-related concerns
+    if (data.city) {
+      if (data.sleepDuration < 6) {
+        concerns.push(
+          "Le changement d'environnement semble affecter votre sommeil"
+        );
+      }
+      if (data.bpm > 100) {
+        concerns.push(
+          "Stress possiblement lié au voyage - surveillez votre rythme cardiaque"
+        );
+      }
     }
 
     return concerns;
