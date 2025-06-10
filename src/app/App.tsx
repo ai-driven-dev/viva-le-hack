@@ -4,11 +4,7 @@ import { useSearchParams } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
-import Image from "next/image";
-
 // UI components
-import BottomToolbar from "./components/BottomToolbar";
-import Events from "./components/Events";
 import Transcript from "./components/Transcript";
 
 // Types
@@ -23,7 +19,6 @@ import { useTranscript } from "@/app/contexts/TranscriptContext";
 import { RealtimeClient } from "@/app/agentConfigs/realtimeClient";
 
 // Agent configs
-import { allAgentSets } from "@/app/agentConfigs";
 // New SDK scenarios
 import { orchestratorScenario } from "@/app/agentConfigs/orchestrator";
 
@@ -34,13 +29,9 @@ const sdkScenarioMap: Record<string, RealtimeAgent[]> = {
   main: orchestratorScenario,
 };
 
-import useAudioDownload from "./hooks/useAudioDownload";
 
 function App() {
   const searchParams = useSearchParams()!;
-
-  // Use urlCodec directly from URL search params (default: "opus")
-  const urlCodec = searchParams.get("codec") || "opus";
 
   const {
     transcriptItems,
@@ -87,22 +78,14 @@ function App() {
   const [sessionStatus, setSessionStatus] =
     useState<SessionStatus>("DISCONNECTED");
 
-  const [isEventsPaneExpanded, setIsEventsPaneExpanded] =
-    useState<boolean>(true);
   const [userText, setUserText] = useState<string>("");
-  const [isPTTActive, setIsPTTActive] = useState<boolean>(false);
+  const [isPTTActive, setIsPTTActive] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const stored = localStorage.getItem("pushToTalkActive");
+    return stored ? stored === "true" : false;
+  });
   const [isPTTUserSpeaking, setIsPTTUserSpeaking] = useState<boolean>(false);
-  const [isAudioPlaybackEnabled, setIsAudioPlaybackEnabled] = useState<boolean>(
-    () => {
-      if (typeof window === "undefined") return true;
-      const stored = localStorage.getItem("audioPlaybackEnabled");
-      return stored ? stored === "true" : true;
-    }
-  );
-
-  // Initialize the recording hook.
-  const { startRecording, stopRecording, downloadRecording } =
-    useAudioDownload();
+  const [isAudioPlaybackEnabled] = useState<boolean>(true);
 
   const sendClientEvent = (eventObj: any, eventNameSuffix = "") => {
     if (!sdkClientRef.current) {
@@ -162,6 +145,11 @@ function App() {
       );
       updateSession();
     }
+  }, [isPTTActive]);
+
+  // Save PTT preference to localStorage
+  useEffect(() => {
+    localStorage.setItem("pushToTalkActive", isPTTActive.toString());
   }, [isPTTActive]);
 
   const fetchEphemeralKey = async (): Promise<string | null> => {
@@ -225,21 +213,6 @@ function App() {
 
         client.on("message", (ev) => {
           logServerEvent(ev);
-
-          // --- Realtime streaming handling ---------------------------------
-          // The Realtime transport emits granular *delta* events while the
-          // assistant is speaking or while the user's audio is still being
-          // transcribed. Those events were previously only logged which made
-          // the UI update only once when the final conversation.item.* event
-          // arrived – effectively disabling streaming. We now listen for the
-          // delta events and update the transcript as they arrive so that
-          // 1) assistant messages stream token-by-token, and
-          // 2) the user sees a live "Transcribing…" placeholder while we are
-          //    still converting their speech to text.
-
-          // NOTE: The exact payloads are still evolving.  We intentionally
-          // access properties defensively to avoid runtime crashes if fields
-          // are renamed or missing.
 
           try {
             // Guardrail trip event – mark last assistant message as FAIL
@@ -541,16 +514,7 @@ function App() {
     }
   };
 
-  const disconnectFromRealtime = () => {
-    if (sdkClientRef.current) {
-      sdkClientRef.current.disconnect();
-      sdkClientRef.current = null;
-    }
-    setSessionStatus("DISCONNECTED");
-    setIsPTTUserSpeaking(false);
 
-    logClientEvent({}, "disconnected");
-  };
 
   const sendSimulatedUserMessage = (text: string) => {
     const id = uuidv4().slice(0, 32);
@@ -662,72 +626,6 @@ function App() {
     sendClientEvent({ type: "response.create" }, "trigger response PTT");
   };
 
-  const onToggleConnection = () => {
-    if (sessionStatus === "CONNECTED" || sessionStatus === "CONNECTING") {
-      disconnectFromRealtime();
-      setSessionStatus("DISCONNECTED");
-    } else {
-      connectToRealtime();
-    }
-  };
-
-  const handleAgentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newAgentConfig = e.target.value;
-    const url = new URL(window.location.toString());
-    url.searchParams.set("agentConfig", newAgentConfig);
-    window.location.replace(url.toString());
-  };
-
-  const handleSelectedAgentChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    const newAgentName = e.target.value;
-    // Reconnect session with the newly selected agent as root so that tool
-    // execution works correctly.
-    disconnectFromRealtime();
-    setSelectedAgentName(newAgentName);
-    // connectToRealtime will be triggered by effect watching selectedAgentName
-  };
-
-  // Instead of using setCodec, we update the URL and refresh the page when codec changes
-  const handleCodecChange = (newCodec: string) => {
-    const url = new URL(window.location.toString());
-    url.searchParams.set("codec", newCodec);
-    window.location.replace(url.toString());
-  };
-
-  useEffect(() => {
-    const storedPushToTalkUI = localStorage.getItem("pushToTalkUI");
-    if (storedPushToTalkUI) {
-      setIsPTTActive(storedPushToTalkUI === "true");
-    }
-    const storedLogsExpanded = localStorage.getItem("logsExpanded");
-    if (storedLogsExpanded) {
-      setIsEventsPaneExpanded(storedLogsExpanded === "true");
-    }
-    const storedAudioPlaybackEnabled = localStorage.getItem(
-      "audioPlaybackEnabled"
-    );
-    if (storedAudioPlaybackEnabled) {
-      setIsAudioPlaybackEnabled(storedAudioPlaybackEnabled === "true");
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("pushToTalkUI", isPTTActive.toString());
-  }, [isPTTActive]);
-
-  useEffect(() => {
-    localStorage.setItem("logsExpanded", isEventsPaneExpanded.toString());
-  }, [isEventsPaneExpanded]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      "audioPlaybackEnabled",
-      isAudioPlaybackEnabled.toString()
-    );
-  }, [isAudioPlaybackEnabled]);
-
   useEffect(() => {
     if (audioElementRef.current) {
       if (isAudioPlaybackEnabled) {
@@ -765,133 +663,29 @@ function App() {
     }
   }, [sessionStatus, isAudioPlaybackEnabled]);
 
-  useEffect(() => {
-    if (sessionStatus === "CONNECTED" && audioElementRef.current?.srcObject) {
-      // The remote audio stream from the audio element.
-      const remoteStream = audioElementRef.current.srcObject as MediaStream;
-      startRecording(remoteStream);
-    }
 
-    // Clean up on unmount or when sessionStatus is updated.
-    return () => {
-      stopRecording();
-    };
-  }, [sessionStatus]);
-
-  const agentSetKey = searchParams.get("agentConfig") || "default";
 
   return (
-    <div className="text-base flex flex-col h-screen bg-gray-100 text-gray-800 relative">
-      <div className="p-5 text-lg font-semibold flex justify-between items-center">
-        <div
-          className="flex items-center cursor-pointer"
-          onClick={() => window.location.reload()}
-        >
-          <div>
-            <Image
-              src="/openai-logomark.svg"
-              alt="OpenAI Logo"
-              width={20}
-              height={20}
-              className="mr-2"
-            />
-          </div>
-          <div>
-            Realtime API <span className="text-gray-500">Agents</span>
-          </div>
-        </div>
-        <div className="flex items-center">
-          <label className="flex items-center text-base gap-1 mr-2 font-medium">
-            Scenario
-          </label>
-          <div className="relative inline-block">
-            <select
-              value={agentSetKey}
-              onChange={handleAgentChange}
-              className="appearance-none border border-gray-300 rounded-lg text-base px-2 py-1 pr-8 cursor-pointer font-normal focus:outline-none"
-            >
-              {Object.keys(allAgentSets).map((agentKey) => (
-                <option key={agentKey} value={agentKey}>
-                  {agentKey}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-600">
-              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M5.23 7.21a.75.75 0 011.06.02L10 10.44l3.71-3.21a.75.75 0 111.04 1.08l-4.25 3.65a.75.75 0 01-1.04 0L5.21 8.27a.75.75 0 01.02-1.06z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-          </div>
-
-          {agentSetKey && (
-            <div className="flex items-center ml-6">
-              <label className="flex items-center text-base gap-1 mr-2 font-medium">
-                Agent
-              </label>
-              <div className="relative inline-block">
-                <select
-                  value={selectedAgentName}
-                  onChange={handleSelectedAgentChange}
-                  className="appearance-none border border-gray-300 rounded-lg text-base px-2 py-1 pr-8 cursor-pointer font-normal focus:outline-none"
-                >
-                  {selectedAgentConfigSet?.map((agent) => (
-                    <option key={agent.name} value={agent.name}>
-                      {agent.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-600">
-                  <svg
-                    className="h-4 w-4"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.23 7.21a.75.75 0 011.06.02L10 10.44l3.71-3.21a.75.75 0 111.04 1.08l-4.25 3.65a.75.75 0 01-1.04 0L5.21 8.27a.75.75 0 01.02-1.06z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+    <div className="min-h-screen bg-[#4299e1] bg-[url('/images/gradient-background.jpg')] bg-cover bg-center bg-no-repeat flex flex-col">
+      {/* Logo */}
+      <div className="w-full flex justify-center items-center pt-8">
+        <img src="/images/logo.png" alt="Logo" className="h-24 w-auto" />
       </div>
-
-      <div className="flex flex-1 gap-2 px-2 overflow-hidden relative">
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col p-4">
         <Transcript
           userText={userText}
           setUserText={setUserText}
           onSendMessage={handleSendTextMessage}
-          downloadRecording={downloadRecording}
-          canSend={
-            sessionStatus === "CONNECTED" && sdkClientRef.current != null
-          }
+          canSend={sessionStatus === "CONNECTED" && sdkClientRef.current != null}
+          sessionStatus={sessionStatus}
+          isPTTActive={isPTTActive}
+          setIsPTTActive={setIsPTTActive}
+          isPTTUserSpeaking={isPTTUserSpeaking}
+          handleTalkButtonDown={handleTalkButtonDown}
+          handleTalkButtonUp={handleTalkButtonUp}
         />
-
-        <Events isExpanded={isEventsPaneExpanded} />
       </div>
-
-      <BottomToolbar
-        sessionStatus={sessionStatus}
-        onToggleConnection={onToggleConnection}
-        isPTTActive={isPTTActive}
-        setIsPTTActive={setIsPTTActive}
-        isPTTUserSpeaking={isPTTUserSpeaking}
-        handleTalkButtonDown={handleTalkButtonDown}
-        handleTalkButtonUp={handleTalkButtonUp}
-        isEventsPaneExpanded={isEventsPaneExpanded}
-        setIsEventsPaneExpanded={setIsEventsPaneExpanded}
-        isAudioPlaybackEnabled={isAudioPlaybackEnabled}
-        setIsAudioPlaybackEnabled={setIsAudioPlaybackEnabled}
-        codec={urlCodec}
-        onCodecChange={handleCodecChange}
-      />
     </div>
   );
 }

@@ -14,6 +14,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link
+          rel="preload"
+          href="/images/gradient-background.jpg"
+          as="image"
+          type="image/jpeg"
+        />
+      </head>
       <body className={`antialiased`}>{children}</body>
     </html>
   );
