@@ -1,35 +1,44 @@
 sequenceDiagram
     participant AS as 📱 Apple Shortcut
-    participant U as 👤 Utilisateur
-    participant O as 🎭 Agent Orchestrateur
-    participant A as 👤 Agent Alter Ego
-    participant P as 🎙️ Agent Podcast
-    participant WS as 🔍 Web Search (Function)
+    participant U as 👤 Utilisateur  
+    participant O as 🎭 Orchestrateur
+    participant H as 💊 Health Agent
+    participant M as 🧠 Memory Agent
+    participant P as 🎙️ Podcast Agent
+    participant A as ⚡ Alter Ego
+    participant WS as 🔍 Web Search
 
-    Note over AS: Collecte données automatique
-    AS->>O: Données entrée (sommeil, rythme cardiaque, météo)
+    Note over AS: Collecte données santé automatique
+    AS->>+O: "hi" (initialisation)
     
-    Note over O: Message d'accueil personnalisé
-    O->>U: "Salut Alex, tu as dormi 7h30, il fait 23°..."
-    O->>A: Demande profil utilisateur
+    Note over O: Workflow automatique
+    O->>U: "Bonjour ! Je vérifie ton état de santé..."
+    O->>+H: transfer_to_healthAgent
     
-    Note over A: Base de données personnalité
-    A->>O: Profil complet (âge, objectifs, historique actions)
+    Note over H: Analyse données santé
+    H->>H: get_today_health_report (API + localStorage)
+    H->>H: analyze_health_trends
+    H->>-O: "Bilan santé complet"
     
-    O->>P: Profil utilisateur + actions précédentes
+    O->>+M: transfer_to_memoryAgent  
+    Note over M: Récupère historique
+    M->>M: get_previous_conversations
+    M->>-O: "Historique actions précédentes"
     
-    Note over P: Création podcast personnalisé
-    P->>WS: Recherche actualités basées sur profil
-    WS-->>P: Actualités ciblées
-    P->>P: Génération contenu (actualité + fait historique + rappel tâches)
-    P->>U: 🎙️ Podcast personnalisé
+    O->>+P: transfer_to_softMorningPodcastAgent
+    Note over P: Génère capsule matinale
+    P->>P: get_health_data + getUserMemory
+    P->>WS: search_good_news + get_weather
+    WS-->>P: Actualités + météo
+    P->>P: Génère script podcast (300-400 mots)
+    P->>U: 🎙️ Script podcast personnalisé
+    P->>+A: transfer_to_alterEgo (avec contexte enrichi)
+    deactivate P
     
-    Note over U: Écoute podcast
-    U->>A: Conversation vocale post-podcast
-    
-    Note over A: Dialogue + définition action du jour
-    A->>U: Questions sur actions précédentes
-    U->>A: Réponses utilisateur
-    A->>A: Définition nouvelle action du jour
-    A->>A: Mise à jour base de données
-    A->>U: Action du jour définie + encouragements
+    Note over A: Définition action du jour
+    A->>U: "Quelle est ton action principale ?"
+    U->>A: Conversation interactive
+    A->>A: update_conversation_state (opened: false)
+    A->>U: "Action sauvegardée ! Session terminée."
+    A->>-O: Retour final
+    deactivate O
