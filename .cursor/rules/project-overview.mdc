@@ -1,0 +1,31 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# OpenAI Realtime API Agents Demo - Project Overview
+
+This is a Next.js TypeScript application demonstrating advanced voice agent patterns using the OpenAI Realtime API and OpenAI Agents SDK.
+
+## Project Purpose
+The application showcases two main agentic patterns for voice interactions:
+1. **Chat-Supervisor Pattern**: A realtime chat agent handles basic interactions while deferring complex tasks to a more intelligent supervisor model
+2. **Sequential Handoff Pattern**: Specialized agents transfer users between them to handle specific intents
+
+## Key Technologies
+- **Next.js 15** with TypeScript and App Router
+- **OpenAI Realtime API** for voice interactions
+- **OpenAI Agents SDK** (`@openai/agents`)
+- **React 19** with modern hooks
+- **Tailwind CSS** for styling
+- **Zod** for schema validation
+- **WebRTC** for real-time communication
+
+## Main Entry Points
+- Application root: [src/app/page.tsx](mdc:src/app/page.tsx)
+- Main app component: [src/app/App.tsx](mdc:src/app/App.tsx)
+- Layout configuration: [src/app/layout.tsx](mdc:src/app/layout.tsx)
+- Global styles: [src/app/globals.css](mdc:src/app/globals.css)
+
+## Architecture Overview
+The app uses a modular agent configuration system where different scenarios can be selected via dropdown. Each agent config defines instructions, tools, and handoff logic for specialized voice interactions.

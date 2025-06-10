@@ -1,0 +1,37 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# API Structure and Backend
+
+## API Routes
+The application uses Next.js App Router API routes located in [src/app/api/](mdc:src/app/api/).
+
+### Session Management
+- **Session API**: [src/app/api/session/](mdc:src/app/api/session/) - Handles OpenAI Realtime API session creation
+- Creates ephemeral tokens for WebRTC connections
+- Manages session configuration and agent initialization
+
+### Response Handling  
+- **Responses API**: [src/app/api/responses/](mdc:src/app/api/responses/) - Handles chat completions and supervisor model interactions
+- Used by the Chat-Supervisor pattern for intelligent responses
+- Integrates with GPT-4.1 and other text-based models
+
+## WebRTC Integration
+The realtime client ([src/app/agentConfigs/realtimeClient.ts](mdc:src/app/agentConfigs/realtimeClient.ts)) handles:
+- WebRTC connection establishment
+- Audio streaming to/from OpenAI Realtime API
+- Event handling for conversation items and responses
+- Session updates for agent handoffs
+
+## Key API Patterns
+1. **Ephemeral Sessions**: Short-lived tokens for secure WebRTC connections
+2. **Event-Driven Architecture**: Real-time events for conversation flow
+3. **Function Calling**: Tool execution through structured function calls
+4. **Agent Transfers**: Session updates to switch between agents
+
+## Environment Configuration
+- Requires `OPENAI_API_KEY` environment variable
+- Can be set in `.env` file or system environment
+- Used for both Realtime API and chat completions

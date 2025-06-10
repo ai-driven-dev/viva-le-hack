@@ -1,0 +1,74 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Types and Data Schemas
+
+## Core Type Definitions
+All main types are defined in [src/app/types.ts](mdc:src/app/types.ts) using TypeScript and Zod for runtime validation.
+
+## Key Interfaces
+
+### AgentConfig
+The central interface for defining voice agents:
+```typescript
+interface AgentConfig {
+  name: string;
+  publicDescription: string;
+  instructions: string;
+  tools: Tool[];
+  toolLogic?: Record<string, Function>;
+  downstreamAgents?: AgentConfig[];
+}
+```
+
+### Tool System
+Function tools follow OpenAI's function calling specification:
+```typescript
+interface Tool {
+  type: "function";
+  name: string;
+  description: string;
+  parameters: ToolParameters;
+}
+```
+
+### Transcript Management
+Conversation items are tracked with detailed metadata:
+```typescript
+interface TranscriptItem {
+  itemId: string;
+  type: "MESSAGE" | "BREADCRUMB";
+  role?: "user" | "assistant";
+  timestamp: string;
+  status: "IN_PROGRESS" | "DONE";
+  guardrailResult?: GuardrailResultType;
+}
+```
+
+## Content Moderation
+Guardrails use predefined categories with Zod validation:
+```typescript
+const MODERATION_CATEGORIES = ["OFFENSIVE", "OFF_BRAND", "VIOLENCE", "NONE"] as const;
+type ModerationCategory = (typeof MODERATION_CATEGORIES)[number];
+```
+
+## Event System
+WebRTC events are strongly typed for real-time communication:
+```typescript
+interface ServerEvent {
+  type: string;
+  event_id?: string;
+  item_id?: string;
+  transcript?: string;
+  session?: { id?: string };
+}
+```
+
+## Type Safety Best Practices
+- Use Zod schemas for runtime validation of external data
+- Define const assertions for literal types
+- Leverage TypeScript's strict mode for better type checking
+- Use discriminated unions for event types
+- Implement proper error handling with typed exceptions

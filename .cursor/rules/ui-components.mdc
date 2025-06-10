@@ -1,0 +1,39 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# UI Components and Frontend Structure
+
+## Main Components
+Located in [src/app/components/](mdc:src/app/components/), the UI is built with React 19 and Tailwind CSS.
+
+### Core UI Components
+- **BottomToolbar**: [src/app/components/BottomToolbar.tsx](mdc:src/app/components/BottomToolbar.tsx) - Controls for connection, recording, and agent selection
+- **Transcript**: [src/app/components/Transcript.tsx](mdc:src/app/components/Transcript.tsx) - Real-time conversation display with message history
+- **Events**: [src/app/components/Events.tsx](mdc:src/app/components/Events.tsx) - Debug panel showing WebRTC events and logs
+- **GuardrailChip**: [src/app/components/GuardrailChip.tsx](mdc:src/app/components/GuardrailChip.tsx) - Content moderation status indicators
+
+## State Management
+The application uses React Context for state management:
+- **Contexts**: [src/app/contexts/](mdc:src/app/contexts/) - Global state providers
+- **Hooks**: [src/app/hooks/](mdc:src/app/hooks/) - Custom React hooks for realtime functionality
+
+## Key UI Features
+1. **Real-time Transcript**: Live conversation display with user/assistant messages
+2. **Agent Selection**: Dropdown to switch between different agent configurations
+3. **Connection Status**: Visual indicators for WebRTC connection state
+4. **Debug Panel**: Expandable events log for development and troubleshooting
+5. **Guardrail Indicators**: Content moderation status chips
+
+## Styling Approach
+- **Tailwind CSS**: Utility-first CSS framework
+- **Configuration**: [tailwind.config.ts](mdc:tailwind.config.ts)
+- **Global Styles**: [src/app/globals.css](mdc:src/app/globals.css)
+- **Responsive Design**: Mobile-first approach with responsive breakpoints
+
+## Component Patterns
+- Functional components with hooks
+- TypeScript interfaces for props
+- Event-driven updates from WebRTC events
+- Conditional rendering based on connection state

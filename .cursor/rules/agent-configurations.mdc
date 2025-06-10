@@ -1,0 +1,40 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Agent Configuration System
+
+## Agent Config Structure
+All agent configurations are defined in [src/app/agentConfigs/](mdc:src/app/agentConfigs/) and follow the `AgentConfig` interface defined in [src/app/types.ts](mdc:src/app/types.ts).
+
+## Core Agent Config Files
+- **Main index**: [src/app/agentConfigs/index.ts](mdc:src/app/agentConfigs/index.ts) - Exports all available agent configurations
+- **Types**: [src/app/agentConfigs/types.ts](mdc:src/app/agentConfigs/types.ts) - Agent-specific type definitions
+- **Realtime Client**: [src/app/agentConfigs/realtimeClient.ts](mdc:src/app/agentConfigs/realtimeClient.ts) - WebRTC connection management
+- **Guardrails**: [src/app/agentConfigs/guardrails.ts](mdc:src/app/agentConfigs/guardrails.ts) - Content moderation logic
+
+## Agent Patterns
+
+### 1. Chat-Supervisor Pattern
+Located in [src/app/agentConfigs/chatSupervisor/](mdc:src/app/agentConfigs/chatSupervisor/)
+- Uses a realtime agent for immediate responses
+- Defers complex tasks to a supervisor model (GPT-4.1)
+- Provides natural conversation flow with intelligent fallbacks
+
+### 2. Sequential Handoff Pattern  
+Located in [src/app/agentConfigs/customerServiceRetail/](mdc:src/app/agentConfigs/customerServiceRetail/)
+- Multiple specialized agents (authentication, returns, sales, human escalation)
+- Agents can transfer users between each other using tool calls
+- Each agent has specific domain expertise
+
+## Key Configuration Properties
+- `name`: Unique identifier for the agent
+- `publicDescription`: Context for agent transfer tools
+- `instructions`: System prompt defining agent behavior
+- `tools`: Available function tools for the agent
+- `toolLogic`: Implementation of tool functions
+- `downstreamAgents`: Agents this agent can transfer to
+
+## Metaprompt Template
+Use [src/app/agentConfigs/voiceAgentMetaprompt.txt](mdc:src/app/agentConfigs/voiceAgentMetaprompt.txt) as a template for creating new voice agent prompts with state machine patterns.

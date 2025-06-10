@@ -1,0 +1,51 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Development Workflow and Best Practices
+
+## Getting Started
+1. **Install Dependencies**: `npm install`
+2. **Environment Setup**: Copy `.env.sample` to `.env` and add your `OPENAI_API_KEY`
+3. **Start Development**: `npm run dev`
+4. **Access Application**: Open [http://localhost:3000](http://localhost:3000)
+
+## Available Scripts
+Defined in [package.json](mdc:package.json):
+- `npm run dev` - Start development server with hot reload
+- `npm run build` - Build production application
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint for code quality
+
+## Project Configuration Files
+- **TypeScript**: [tsconfig.json](mdc:tsconfig.json) - TypeScript compiler configuration
+- **ESLint**: [eslint.config.mjs](mdc:eslint.config.mjs) - Code linting rules
+- **Next.js**: [next.config.ts](mdc:next.config.ts) - Next.js framework configuration
+- **PostCSS**: [postcss.config.mjs](mdc:postcss.config.mjs) - CSS processing configuration
+
+## Development Best Practices
+
+### Adding New Agent Configurations
+1. Create new directory in [src/app/agentConfigs/](mdc:src/app/agentConfigs/)
+2. Define agent config following the `AgentConfig` interface
+3. Add to exports in [src/app/agentConfigs/index.ts](mdc:src/app/agentConfigs/index.ts)
+4. Test with the scenario dropdown in the UI
+
+### Tool Development
+- Define tools using the `Tool` interface from [src/app/types.ts](mdc:src/app/types.ts)
+- Implement tool logic in the `toolLogic` property of agent configs
+- Use Zod schemas for parameter validation
+- Return structured data that can be used in conversation context
+
+### Debugging
+- Use the Events panel in the UI to monitor WebRTC events
+- Check browser console for client-side errors
+- Monitor network tab for API request/response debugging
+- Use transcript breadcrumbs for tool call tracing
+
+### Code Quality
+- Follow TypeScript strict mode requirements
+- Use ESLint configuration for consistent code style
+- Implement proper error handling for async operations
+- Add type definitions for all custom interfaces
