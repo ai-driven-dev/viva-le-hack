@@ -1,4 +1,6 @@
 import { RealtimeAgent } from "@openai/agents/realtime";
+import { alterEgoAgent } from "./alterEgo";
+import { memoryAgent } from "./memoryAgent";
 
 export const orchestratorAgent = new RealtimeAgent({
   name: "orchestrator",
@@ -67,10 +69,17 @@ export const orchestratorAgent = new RealtimeAgent({
     
     Soyez le chef d'orchestre efficace qui coordonne le workflow !
   `,
-  handoffs: [],
+  handoffs: [memoryAgent, alterEgoAgent],
   tools: [],
   handoffDescription:
     "Orchestrateur principal qui coordonne le workflow entre les agents spécialisés",
 });
 
-export const orchestratorScenario = [orchestratorAgent];
+// Maintenant on peut ajouter l'orchestrateur aux handoffs du memoryAgent
+memoryAgent.handoffs = [orchestratorAgent];
+
+export const orchestratorScenario = [
+  orchestratorAgent,
+  memoryAgent,
+  alterEgoAgent,
+];
