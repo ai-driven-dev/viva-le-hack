@@ -165,33 +165,41 @@ const searchGoodNews = tool({
   parameters: {
     type: "object",
     properties: {
-      topic: {
+      city: {
         type: "string",
-        description: "Sujet optionnel pour la recherche",
-      },
-      region: {
-        type: "string",
-        description: "Région optionnelle",
+        description:
+          "Ville pour chercher des nouvelles locales (ex: Paris, London)",
       },
     },
     required: [],
     additionalProperties: false,
   },
   execute: async (input) => {
-    const goodNewsDatabase = [
-      "Des scientifiques ont découvert que les arbres dans les forêts partagent des nutriments via des réseaux fongiques souterrains, prouvant la collaboration inhérente de la nature.",
-      "Une jeune de 14 ans a inventé un savon qui traite le cancer de la peau, remportant le Young Scientist Challenge.",
-      "Les efforts de nettoyage des océans ont retiré 100 000 kg de plastique du Pacifique ce mois-ci.",
-      "Des musiciens du monde entier ont collaboré pour créer une chanson de 24 heures pour la sensibilisation à la santé mentale.",
-      "Les bibliothèques du monde entier ont signalé un nombre record de visiteurs alors que les gens redécouvrent la joie des espaces calmes partagés.",
-    ];
+    try {
+      const { city = "world" } = input as { city?: string };
+      const response = await fetch(
+        `/api/news?city=${encodeURIComponent(city)}`
+      );
 
-    return {
-      success: true,
-      news: goodNewsDatabase[
-        Math.floor(Math.random() * goodNewsDatabase.length)
-      ],
-    };
+      if (!response.ok) {
+        return {
+          success: false,
+          error: "Actualités indisponibles",
+        };
+      }
+
+      const data = (await response.json()) as any;
+      return {
+        success: true,
+        city: data.city,
+        news: data.news,
+      };
+    } catch {
+      return {
+        success: false,
+        error: "Service d'actualités indisponible",
+      };
+    }
   },
 });
 
