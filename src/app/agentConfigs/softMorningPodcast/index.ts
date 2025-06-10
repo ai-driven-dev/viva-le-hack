@@ -204,25 +204,47 @@ const getWeather = tool({
     properties: {
       location: {
         type: "string",
-        description:
-          "Lieu pour la météo (utilise la localisation par défaut si non spécifié)",
+        description: "Lieu pour la météo (ex: Paris, New York)",
+      },
+      unit: {
+        type: "string",
+        description: "Unité de température",
+        enum: ["celsius", "fahrenheit"],
       },
     },
-    required: [],
+    required: ["location"],
     additionalProperties: false,
   },
   execute: async (input) => {
-    // Placeholder pour l'API météo
-    return {
-      success: true,
-      weather: {
-        condition: "partiellement nuageux",
-        temperature: 18,
-        feels_like: 16,
-        suggestion:
-          "Parfait pour une courte promenade pour s'éclaircir l'esprit",
-      },
-    };
+    try {
+      const { location, unit = "celsius" } = input as {
+        location: string;
+        unit?: string;
+      };
+      const response = await fetch(
+        `/api/weather?location=${encodeURIComponent(location)}&unit=${unit}`
+      );
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: "Météo indisponible",
+        };
+      }
+
+      const data = (await response.json()) as any;
+      return {
+        success: true,
+        location: data.location,
+        temperature: data.temperature,
+        unit: data.unit,
+      };
+    } catch {
+      return {
+        success: false,
+        error: "Service météo indisponible",
+      };
+    }
   },
 });
 
