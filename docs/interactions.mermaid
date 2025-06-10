@@ -1,0 +1,35 @@
+sequenceDiagram
+    participant AS as 📱 Apple Shortcut
+    participant U as 👤 Utilisateur
+    participant O as 🎭 Agent Orchestrateur
+    participant A as 👤 Agent Alter Ego
+    participant P as 🎙️ Agent Podcast
+    participant WS as 🔍 Web Search (Function)
+
+    Note over AS: Collecte données automatique
+    AS->>O: Données entrée (sommeil, rythme cardiaque, météo)
+    
+    Note over O: Message d'accueil personnalisé
+    O->>U: "Salut Alex, tu as dormi 7h30, il fait 23°..."
+    O->>A: Demande profil utilisateur
+    
+    Note over A: Base de données personnalité
+    A->>O: Profil complet (âge, objectifs, historique actions)
+    
+    O->>P: Profil utilisateur + actions précédentes
+    
+    Note over P: Création podcast personnalisé
+    P->>WS: Recherche actualités basées sur profil
+    WS-->>P: Actualités ciblées
+    P->>P: Génération contenu (actualité + fait historique + rappel tâches)
+    P->>U: 🎙️ Podcast personnalisé
+    
+    Note over U: Écoute podcast
+    U->>A: Conversation vocale post-podcast
+    
+    Note over A: Dialogue + définition action du jour
+    A->>U: Questions sur actions précédentes
+    U->>A: Réponses utilisateur
+    A->>A: Définition nouvelle action du jour
+    A->>A: Mise à jour base de données
+    A->>U: Action du jour définie + encouragements
