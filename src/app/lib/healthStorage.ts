@@ -3,42 +3,73 @@ import { DailyHealthReport } from "@/app/types";
 const HEALTH_STORAGE_KEY = "daily_health_reports";
 const MAX_STORED_REPORTS = 30; // Keep last 30 days of data
 
+interface HealthReportsStorage {
+  [date: string]: DailyHealthReport;
+}
+
 export class HealthStorage {
   static saveHealthReport(report: DailyHealthReport): void {
     if (typeof window === "undefined") return;
 
     const reports = this.getAllReports();
-    reports.unshift(report); // Add new report at the beginning
+    const dateKey = new Date(report.createdAt).toISOString().split("T")[0];
+    reports[dateKey] = report;
 
     // Keep only the last MAX_STORED_REPORTS
-    const trimmedReports = reports.slice(0, MAX_STORED_REPORTS);
+    const sortedDates = Object.keys(reports).sort().reverse();
+    if (sortedDates.length > MAX_STORED_REPORTS) {
+      const reportsToKeep = sortedDates
+        .slice(0, MAX_STORED_REPORTS)
+        .reduce((acc, date) => {
+          acc[date] = reports[date];
+          return acc;
+        }, {} as HealthReportsStorage);
 
-    localStorage.setItem(HEALTH_STORAGE_KEY, JSON.stringify(trimmedReports));
+      localStorage.setItem(HEALTH_STORAGE_KEY, JSON.stringify(reportsToKeep));
+    } else {
+      localStorage.setItem(HEALTH_STORAGE_KEY, JSON.stringify(reports));
+    }
   }
 
-  static getAllReports(): DailyHealthReport[] {
-    if (typeof window === "undefined") return [];
+  static saveAllReports(reports: HealthReportsStorage): void {
+    if (typeof window === "undefined") return;
+
+    // Keep only the last MAX_STORED_REPORTS
+    const sortedDates = Object.keys(reports).sort().reverse();
+    if (sortedDates.length > MAX_STORED_REPORTS) {
+      const reportsToKeep = sortedDates
+        .slice(0, MAX_STORED_REPORTS)
+        .reduce((acc, date) => {
+          acc[date] = reports[date];
+          return acc;
+        }, {} as HealthReportsStorage);
+
+      localStorage.setItem(HEALTH_STORAGE_KEY, JSON.stringify(reportsToKeep));
+    } else {
+      localStorage.setItem(HEALTH_STORAGE_KEY, JSON.stringify(reports));
+    }
+  }
+
+  static getAllReports(): HealthReportsStorage {
+    if (typeof window === "undefined") return {};
 
     const stored = localStorage.getItem(HEALTH_STORAGE_KEY);
-    if (!stored) return [];
+    if (!stored) return {};
 
     try {
-      return JSON.parse(stored) as DailyHealthReport[];
+      return JSON.parse(stored) as HealthReportsStorage;
     } catch (error) {
       console.error("Error parsing health reports:", error);
-      return [];
+      return {};
     }
   }
 
   static getTodayReport(): DailyHealthReport | null {
     const reports = this.getAllReports();
-    if (reports.length === 0) return null;
+    if (Object.keys(reports).length === 0) return null;
 
-    const today = new Date().toDateString();
-    const latestReport = reports[0];
-    const reportDate = new Date(latestReport.createdAt).toDateString();
-
-    return reportDate === today ? latestReport : null;
+    const today = new Date().toISOString().split("T")[0];
+    return reports[today] || null;
   }
 
   static getReportsByDateRange(
@@ -46,11 +77,12 @@ export class HealthStorage {
     endDate: Date
   ): DailyHealthReport[] {
     const reports = this.getAllReports();
+    const startStr = startDate.toISOString().split("T")[0];
+    const endStr = endDate.toISOString().split("T")[0];
 
-    return reports.filter((report) => {
-      const reportDate = new Date(report.createdAt);
-      return reportDate >= startDate && reportDate <= endDate;
-    });
+    return Object.entries(reports)
+      .filter(([date]) => date >= startStr && date <= endStr)
+      .map(([_, report]) => report);
   }
 
   static getLastNDaysReports(days: number): DailyHealthReport[] {

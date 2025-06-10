@@ -25,11 +25,17 @@ const fetchHealthReportFromAPI = tool({
         // Sauvegarder dans le localStorage pour une utilisation future
         if (typeof window !== "undefined") {
           HealthStorage.saveHealthReport(data.report as DailyHealthReport);
+
+          // Sauvegarder aussi l'historique complet si disponible
+          if (data.allReports) {
+            HealthStorage.saveAllReports(data.allReports);
+          }
         }
 
         return {
           success: true,
           report: data.report,
+          allReports: data.allReports,
           source: "api",
         };
       }
@@ -37,6 +43,7 @@ const fetchHealthReportFromAPI = tool({
       return {
         success: false,
         message: "Aucune donnée de santé trouvée dans l'API",
+        allReports: data.allReports,
       };
     } catch (error) {
       return {
@@ -125,6 +132,25 @@ const getHealthHistory = tool({
   },
   execute: async (input) => {
     const { days } = input as { days: number };
+
+    // D'abord essayer de récupérer depuis l'API pour avoir les données les plus récentes
+    try {
+      const response = await fetch("/api/health", {
+        method: "GET",
+      });
+
+      const data = await response.json();
+      if (data.allReports) {
+        // Sauvegarder l'historique complet dans le localStorage
+        if (typeof window !== "undefined") {
+          HealthStorage.saveAllReports(data.allReports);
+        }
+      }
+    } catch (error) {
+      console.log("Impossible de récupérer l'historique depuis l'API");
+    }
+
+    // Récupérer l'historique du localStorage
     const reports = HealthStorage.getLastNDaysReports(Math.min(days, 30));
 
     if (reports.length === 0) {

@@ -1,0 +1,32 @@
+{
+  "2025-06-10": {
+    "data": {
+      "sleepDuration": 3,
+      "bodyTemperature": 39,
+      "bpm": 50,
+      "timestamp": "2025-06-10T10:25:23.519Z"
+    },
+    "analysis": {
+      "status": "poor",
+      "summary": "Bonjour ! Il est 12:25. Votre état de santé ce matin est préoccupant. Vous n'avez dormi que 3 heures, ce qui est insuffisant. Votre température corporelle est élevée (39°C). Votre rythme cardiaque est bas (50 bpm).",
+      "recommendations": [
+        "Essayez de dormir au moins 7-8 heures par nuit",
+        "Établissez une routine de sommeil régulière",
+        "Surveillez votre température et consultez un médecin si elle persiste",
+        "Restez hydraté et reposez-vous"
+      ],
+      "concerns": [
+        "Température élevée détectée - possible fièvre",
+        "Rythme cardiaque très bas",
+        "Privation de sommeil sévère"
+      ],
+      "scores": {
+        "sleep": 0,
+        "temperature": 5,
+        "heartRate": 65,
+        "overall": 23
+      }
+    },
+    "createdAt": "2025-06-10T10:25:23.519Z"
+  }
+}

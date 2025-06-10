@@ -2,7 +2,10 @@ import { RealtimeAgent } from "@openai/agents/realtime";
 import { alterEgoAgent } from "./alterEgo";
 import { healthAgent } from "./healthAgent";
 import { memoryAgent } from "./memoryAgent";
-import { softMorningPodcastAgent } from "./softMorningPodcast";
+import {
+  configureSoftMorningPodcastHandoffs,
+  softMorningPodcastAgent,
+} from "./softMorningPodcast";
 
 export const orchestratorAgent = new RealtimeAgent({
   name: "orchestrator",
@@ -132,6 +135,9 @@ export const orchestratorAgent = new RealtimeAgent({
   handoffDescription:
     "Orchestrateur principal qui coordonne le workflow entre les agents spécialisés en commençant par l'analyse de santé",
 });
+
+// Configure les handoffs après l'initialisation de tous les agents
+configureSoftMorningPodcastHandoffs(orchestratorAgent);
 
 // Maintenant on peut ajouter l'orchestrateur aux handoffs du memoryAgent et healthAgent
 memoryAgent.handoffs = [orchestratorAgent];

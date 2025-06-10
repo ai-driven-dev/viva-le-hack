@@ -1,5 +1,6 @@
 import { HealthStorage } from "@/app/lib/healthStorage";
 import { RealtimeAgent, tool } from "@openai/agents/realtime";
+import { alterEgoAgent } from "../alterEgo";
 
 // Outil pour récupérer les données de santé
 const getHealthData = tool({
@@ -236,7 +237,7 @@ function analyzeTrend(reports: any[]): string {
   return isStable ? "stable" : isImproving ? "amélioration" : "dégradation";
 }
 
-export const softMorningPodcastAgent = new RealtimeAgent({
+export const softMorningPodcastAgent: RealtimeAgent = new RealtimeAgent({
   name: "softMorningPodcastAgent",
   voice: "sage",
   instructions: `Tu es une voix douce mais honnête dans la tête de l'utilisateur — comme un ami intérieur sage. Tu parles comme des pensées matinales : calme, clair, personnel.
@@ -298,7 +299,14 @@ GESTION DES TRANSFERTS :
 
 Souviens-toi : Tu n'es pas un coach. Tu es la vérité tranquille qu'ils connaissent déjà.`,
   tools: [getHealthData, getUserMemory, searchGoodNews, getWeather],
-  handoffs: [],
+  handoffs: [alterEgoAgent],
   handoffDescription:
     "Agent qui génère des scripts de podcast réflexifs quotidiens basés sur la santé, la mémoire et les patterns émotionnels",
 });
+
+// Cette fonction sera appelée après l'initialisation de tous les agents
+export function configureSoftMorningPodcastHandoffs(
+  orchestrator: RealtimeAgent
+) {
+  softMorningPodcastAgent.handoffs = [alterEgoAgent, orchestrator];
+}

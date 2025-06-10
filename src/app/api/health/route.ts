@@ -6,7 +6,11 @@ import path from "path";
 
 // Temporary storage path
 const HEALTH_DATA_DIR = path.join(process.cwd(), ".health-data");
-const HEALTH_DATA_FILE = path.join(HEALTH_DATA_DIR, "latest-report.json");
+const HEALTH_DATA_FILE = path.join(HEALTH_DATA_DIR, "health-reports.json");
+
+interface HealthReportsStorage {
+  [date: string]: DailyHealthReport;
+}
 
 // Ensure directory exists
 async function ensureHealthDataDir() {
@@ -14,6 +18,16 @@ async function ensureHealthDataDir() {
     await mkdir(HEALTH_DATA_DIR, { recursive: true });
   } catch (error) {
     console.error("Error creating health data directory:", error);
+  }
+}
+
+// Read existing reports or create empty storage
+async function readExistingReports(): Promise<HealthReportsStorage> {
+  try {
+    const data = await readFile(HEALTH_DATA_FILE, "utf-8");
+    return JSON.parse(data) as HealthReportsStorage;
+  } catch {
+    return {};
   }
 }
 
@@ -69,9 +83,16 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString(),
     };
 
-    // Save the report to a temporary file
+    // Read existing reports
     await ensureHealthDataDir();
-    await writeFile(HEALTH_DATA_FILE, JSON.stringify(report, null, 2));
+    const existingReports = await readExistingReports();
+
+    // Add new report with date as key
+    const dateKey = new Date().toISOString().split("T")[0];
+    existingReports[dateKey] = report;
+
+    // Save all reports
+    await writeFile(HEALTH_DATA_FILE, JSON.stringify(existingReports, null, 2));
 
     // Return the analysis
     return NextResponse.json({
@@ -90,23 +111,22 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    // Try to read the latest health report
-    const data = await readFile(HEALTH_DATA_FILE, "utf-8");
-    const report = JSON.parse(data) as DailyHealthReport;
+    // Try to read all health reports
+    const reports = await readExistingReports();
+    const today = new Date().toISOString().split("T")[0];
 
-    // Check if the report is from today
-    const today = new Date().toDateString();
-    const reportDate = new Date(report.createdAt).toDateString();
-
-    if (reportDate === today) {
+    // Check if we have a report for today
+    if (reports[today]) {
       return NextResponse.json({
         success: true,
-        report,
+        report: reports[today],
+        allReports: reports,
         message: "Today's health report retrieved successfully",
       });
     } else {
       return NextResponse.json({
         success: false,
+        allReports: reports,
         message: "No health data for today",
       });
     }
