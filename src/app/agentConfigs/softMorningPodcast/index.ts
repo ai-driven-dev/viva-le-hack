@@ -267,6 +267,31 @@ const getWeather = tool({
   },
 });
 
+// Outil pour récupérer la date et l'heure actuelles
+const getDateTime = tool({
+  name: "get_datetime",
+  description: "Récupère la date et l'heure actuelles",
+  parameters: {
+    type: "object",
+    properties: {},
+    required: [],
+    additionalProperties: false,
+  },
+  execute: async () => {
+    const now = new Date();
+    return {
+      success: true,
+      datetime: now.toISOString(),
+      date: now.toLocaleDateString("fr-FR"),
+      time: now.toLocaleTimeString("fr-FR", { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }),
+      dayOfWeek: now.toLocaleDateString("fr-FR", { weekday: 'long' }),
+    };
+  },
+});
+
 // Helper function pour analyser les tendances
 function analyzeTrend(reports: any[]): string {
   if (reports.length < 3) return "données_insuffisantes";
