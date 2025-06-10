@@ -3,8 +3,11 @@
  * implemented on top of @openai/agents/realtime RealtimeSession.
  */
 
-import { RealtimeSession, RealtimeAgent, OpenAIRealtimeWebRTC } from '@openai/agents/realtime';
-import { moderationGuardrail } from './guardrails';
+import {
+  OpenAIRealtimeWebRTC,
+  RealtimeAgent,
+  RealtimeSession,
+} from "@openai/agents/realtime";
 
 // Minimal event emitter (browser-safe, no Node polyfill)
 type Listener<Args extends any[]> = (...args: Args) => void;
@@ -22,7 +25,7 @@ class MiniEmitter<Events extends Record<string, any[]>> {
     const arr = this.#events.get(event) || [];
     this.#events.set(
       event,
-      arr.filter((f) => f !== fn),
+      arr.filter((f) => f !== fn)
     );
   }
 
@@ -33,11 +36,11 @@ class MiniEmitter<Events extends Record<string, any[]>> {
 }
 
 export type ClientEvents = {
-  connection_change: ['connected' | 'connecting' | 'disconnected'];
+  connection_change: ["connected" | "connecting" | "disconnected"];
   message: [any]; // raw transport events (will be refined later)
   audio_interrupted: [];
-  history_added: [import('@openai/agents/realtime').RealtimeItem];
-  history_updated: [import('@openai/agents/realtime').RealtimeItem[]];
+  history_added: [import("@openai/agents/realtime").RealtimeItem];
+  history_updated: [import("@openai/agents/realtime").RealtimeItem[]];
 };
 
 export interface RealtimeClientOptions {
@@ -56,11 +59,17 @@ export class RealtimeClient {
     this.#options = options;
   }
 
-  on<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void) {
+  on<K extends keyof ClientEvents>(
+    event: K,
+    listener: (...args: ClientEvents[K]) => void
+  ) {
     this.#events.on(event, listener as any);
   }
 
-  off<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => void) {
+  off<K extends keyof ClientEvents>(
+    event: K,
+    listener: (...args: ClientEvents[K]) => void
+  ) {
     this.#events.off(event, listener as any);
   }
 
@@ -75,86 +84,91 @@ export class RealtimeClient {
           useInsecureApiKey: true,
           audioElement: this.#options.audioElement,
         })
-      : 'webrtc';
+      : "webrtc";
 
     this.#session = new RealtimeSession(rootAgent, {
       transport: transportValue,
-      outputGuardrails: [moderationGuardrail as any],
       context: this.#options.extraContext ?? {},
     });
 
-    // Immediately notify UI that we’ve started connecting.
-    this.#events.emit('connection_change', 'connecting');
+    // Immediately notify UI that we've started connecting.
+    this.#events.emit("connection_change", "connecting");
 
-    // Forward every transport event as message for handler and watch for
-    // low-level connection state changes so we can propagate *disconnections*
-    // after initial setup.
+    // Forward only essential events instead of everything
     const transport: any = this.#session.transport;
 
-    transport.on('*', (ev: any) => {
-      // Surface raw session.updated to console for debugging missing instructions.
-      if (ev?.type === 'session.updated') {
-        // eslint-disable-next-line no-console
+    // Filter events - only forward what we actually need
+    transport.on("*", (ev: any) => {
+      // Only forward essential events, not streaming deltas
+      const essentialEvents = [
+        "session.updated",
+        "response.done",
+        "conversation.item.created",
+        "conversation.item.completed",
+        "error",
+      ];
+
+      if (essentialEvents.includes(ev?.type)) {
+        this.#events.emit("message", ev);
       }
-      this.#events.emit('message', ev);
     });
 
-    transport.on('connection_change', (status: any) => {
-      if (status === 'disconnected') {
-        this.#events.emit('connection_change', 'disconnected');
+    transport.on("connection_change", (status: any) => {
+      if (status === "disconnected") {
+        this.#events.emit("connection_change", "disconnected");
       }
     });
 
     // Track seen items so we can re-emit granular additions.
     const seenItems = new Map<string, string>(); // itemId -> serialized status marker
 
-    this.#session.on('history_updated', (history: any) => {
+    this.#session.on("history_updated", (history: any) => {
       (history as any[]).forEach((item) => {
         const key = `${item.itemId}:${item.status}`;
         if (!seenItems.has(key)) {
           seenItems.set(key, key);
-          this.#events.emit('history_added', item);
+          this.#events.emit("history_added", item);
         }
       });
       // Also expose full history if callers want it.
-      this.#events.emit('history_updated', history);
+      this.#events.emit("history_updated", history);
     });
 
-    this.#session.on('audio_interrupted', () => {
-      this.#events.emit('audio_interrupted');
-    });
-
-    this.#session.on('guardrail_tripped', (info: any) => {
-      this.#events.emit('message', { type: 'guardrail_tripped', info });
+    this.#session.on("audio_interrupted", () => {
+      this.#events.emit("audio_interrupted");
     });
 
     // Wait for full connection establishment (data channel open).
     await this.#session.connect({ apiKey: ek });
 
     // Now we are truly connected.
-    this.#events.emit('connection_change', 'connected');
+    this.#events.emit("connection_change", "connected");
   }
 
   disconnect() {
     this.#session?.close();
     this.#session = null;
-    this.#events.emit('connection_change', 'disconnected');
+    this.#events.emit("connection_change", "disconnected");
   }
 
   sendUserText(text: string) {
-    if (!this.#session) throw new Error('not connected');
+    if (!this.#session) throw new Error("not connected");
     this.#session.sendMessage(text);
   }
 
   pushToTalkStart() {
     if (!this.#session) return;
-    this.#session.transport.sendEvent({ type: 'input_audio_buffer.clear' } as any);
+    this.#session.transport.sendEvent({
+      type: "input_audio_buffer.clear",
+    } as any);
   }
 
   pushToTalkStop() {
     if (!this.#session) return;
-    this.#session.transport.sendEvent({ type: 'input_audio_buffer.commit' } as any);
-    this.#session.transport.sendEvent({ type: 'response.create' } as any);
+    this.#session.transport.sendEvent({
+      type: "input_audio_buffer.commit",
+    } as any);
+    this.#session.transport.sendEvent({ type: "response.create" } as any);
   }
 
   sendEvent(event: any) {

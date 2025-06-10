@@ -1,44 +1,40 @@
 sequenceDiagram
-    participant AS as 📱 Apple Shortcut
     participant U as 👤 Utilisateur  
     participant O as 🎭 Orchestrateur
     participant H as 💊 Health Agent
     participant M as 🧠 Memory Agent
     participant P as 🎙️ Podcast Agent
     participant A as ⚡ Alter Ego
-    participant WS as 🔍 Web Search
+    participant API as 🌐 APIs
 
-    Note over AS: Collecte données santé automatique
-    AS->>+O: "hi" (initialisation)
+    U->>+O: "hi"
     
-    Note over O: Workflow automatique
-    O->>U: "Bonjour ! Je vérifie ton état de santé..."
+    Note over O: Collecte TOUTES les données
     O->>+H: transfer_to_healthAgent
+    H->>H: Analyse santé
+    H->>-O: "Données santé : [bpm], [sommeil], [temp]"
+
+    O->>+M: transfer_to_memoryAgent
+    M->>M: Récupère historique
+    M->>-O: "Historique : [actions], [patterns]"
+
+    Note over O: Récupère météo et news
+    O->>API: get_weather + search_good_news
+    API-->>O: Météo + Actualités
+
+    Note over O: Transmet TOUT au Podcast Agent
+    O->>+P: transfer_to_softMorningPodcastAgent<br/>CONTEXTE COMPLET :<br/>"Santé: [bpm, sommeil, temp]<br/>Historique: [actions, patterns]<br/>Météo: [ville, température]<br/>News: [actualités positives]"
     
-    Note over H: Analyse données santé
-    H->>H: get_today_health_report (API + localStorage)
-    H->>H: analyze_health_trends
-    H->>-O: "Bilan santé complet"
+    Note over P: PODCAST avec données transmises (AUCUN outil)
+    P->>U: 🎙️ "Bonjour [prénom] ! Il est [heure], ton corps a récupéré<br/>avec [sommeil]h de sommeil, ton rythme cardiaque est à [bpm]...<br/><br/>Dehors il fait [météo] à [ville], parfait pour [activité]...<br/><br/>Hier tu pensais à [intention], c'est normal de [pattern]...<br/><br/>[Histoire inspirante]...<br/><br/>Et pour finir : [actualité positive]..."
     
-    O->>+M: transfer_to_memoryAgent  
-    Note over M: Récupère historique
-    M->>M: get_previous_conversations
-    M->>-O: "Historique actions précédentes"
-    
-    O->>+P: transfer_to_softMorningPodcastAgent
-    Note over P: Génère capsule matinale
-    P->>P: get_health_data + getUserMemory
-    P->>WS: search_good_news + get_weather
-    WS-->>P: Actualités + météo
-    P->>P: Génère script podcast (300-400 mots)
-    P->>U: 🎙️ Script podcast personnalisé
-    P->>+A: transfer_to_alterEgo (avec contexte enrichi)
+    P->>+A: transfer_to_alterEgo<br/>CONTEXTE ULTRA-ENRICHI
     deactivate P
     
-    Note over A: Définition action du jour
-    A->>U: "Quelle est ton action principale ?"
+    Note over A: Actions avec contexte complet
+    A->>U: "Maintenant, parlons de ton action du jour..."
     U->>A: Conversation interactive
     A->>A: update_conversation_state (opened: false)
-    A->>U: "Action sauvegardée ! Session terminée."
-    A->>-O: Retour final
+    A->>U: "Action sauvegardée ! Vas-y !"
+    A->>-O: Fin
     deactivate O

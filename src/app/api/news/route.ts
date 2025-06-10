@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const response = await openai.responses.create({
       model: "gpt-4.1",
       tools: [{ type: "web_search_preview" }],
-      input: `Find one positive news story from today in ${city}. Today is: ${new Date().toLocaleDateString()}`,
+      input: `Web search for some news in ${city}. Today is: ${new Date().toLocaleDateString()}. Return that news in a positive energy format.`,
     });
 
     // Extraire le texte de la réponse

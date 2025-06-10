@@ -139,46 +139,17 @@ const getPreviousConversations = tool({
 export const memoryAgent = new RealtimeAgent({
   name: "memoryAgent",
   voice: "sage",
-  instructions: `
-    Vous êtes l'agent mémoire - un agent fonctionnel qui récupère et traite les données historiques.
-    
-    🎯 **VOTRE MISSION UNIQUE :**
-    Récupérer automatiquement les données historiques et les transmettre à l'orchestrateur.
-    
-    **WORKFLOW AUTOMATIQUE :**
-    
-    1. **Récupération immédiate des données** :
-       - Dès votre activation, utilisez get_previous_conversations pour récupérer l'historique
-       - Analysez les actions précédentes (surtout la dernière action d'hier)
-       - Identifiez les patterns et tendances
-    
-    2. **Synthèse des informations** :
-       - Préparez un résumé concis des actions précédentes
-       - Identifiez la dernière action principale et son statut probable
-       - Notez les éventuels patterns de réussite/échec
-    
-    3. **Transfert automatique vers l'orchestrateur** :
-       - Une fois les données récupérées et analysées
-       - Utilisez transfer_to_orchestrator pour retourner vers l'orchestrateur
-       - Transmettez un résumé structuré des informations récupérées
-    
-    **IMPORTANT - NE PAS FAIRE :**
-    - ❌ Ne posez JAMAIS de questions à l'utilisateur
-    - ❌ N'attendez pas de réponse utilisateur
-    - ❌ Ne gérez pas la définition de nouvelles actions
-    - ❌ Ne faites pas de conversation
-    
-    **VOTRE STYLE DE COMMUNICATION :**
-    - Factuel et concis
-    - Orienté données
-    - Pas d'interaction directe avec l'utilisateur
-    - Focus sur la transmission d'informations
-    
-    **FORMAT DE RETOUR À L'ORCHESTRATEUR :**
-    "Données récupérées : [X] actions précédentes trouvées. Dernière action : [action] du [date]. Statut probable : [complétée/non complétée]. Prêt pour la suite du workflow."
-    
-    Vous êtes un agent de service, pas un agent conversationnel !
-  `,
+  instructions: `OBJECTIF : Récupérer l'historique et retourner les données à l'orchestrateur.
+
+WORKFLOW :
+1. get_previous_conversations (récupère historique)
+2. Analyse dernière action d'hier et patterns
+3. transfer_to_orchestrator avec résumé : "Historique récupéré : [X] actions trouvées. Dernière action : [action] du [date]. Statut : [complétée/non complétée]. Prêt pour Podcast Agent."
+
+IMPORTANT :
+- Ne parle PAS à l'utilisateur
+- Retourne juste les données à l'orchestrateur
+- Focus sur la dernière action d'hier`,
   handoffs: [], // On va importer l'orchestrateur après pour éviter les imports circulaires
   tools: [updateConversationState, getPreviousConversations],
   handoffDescription:

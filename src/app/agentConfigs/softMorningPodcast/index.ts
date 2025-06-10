@@ -50,7 +50,7 @@ const getHealthData = tool({
           reports.length;
         const latestData = reports[0]?.data || null;
 
-        return {
+        const result = {
           success: true,
           latest: latestData,
           averages: {
@@ -59,6 +59,8 @@ const getHealthData = tool({
           },
           trend: analyzeTrend(reports),
         };
+
+        return result;
       }
     } catch (error) {
       console.log("API failed, checking localStorage");
@@ -81,7 +83,7 @@ const getHealthData = tool({
       reports.reduce((sum, r) => sum + r.data.bpm, 0) / reports.length;
     const latestData = reports[0]?.data || null;
 
-    return {
+    const result = {
       success: true,
       latest: latestData,
       averages: {
@@ -90,6 +92,8 @@ const getHealthData = tool({
       },
       trend: analyzeTrend(reports),
     };
+
+    return result;
   },
 });
 
@@ -151,10 +155,12 @@ const getUserMemory = tool({
       }
     }
 
-    return {
+    const finalResult = {
       success: true,
       memory: filteredResult,
     };
+
+    return finalResult;
   },
 });
 
@@ -189,11 +195,13 @@ const searchGoodNews = tool({
       }
 
       const data = (await response.json()) as any;
-      return {
+      const result = {
         success: true,
         city: data.city,
         news: data.news,
       };
+
+      return result;
     } catch {
       return {
         success: false,
@@ -229,6 +237,7 @@ const getWeather = tool({
         location: string;
         unit?: string;
       };
+
       const response = await fetch(
         `/api/weather?location=${encodeURIComponent(location)}&unit=${unit}`
       );
@@ -241,12 +250,14 @@ const getWeather = tool({
       }
 
       const data = (await response.json()) as any;
-      return {
+      const result = {
         success: true,
         location: data.location,
         temperature: data.temperature,
         unit: data.unit,
       };
+
+      return result;
     } catch {
       return {
         success: false,
@@ -270,68 +281,35 @@ function analyzeTrend(reports: any[]): string {
 export const softMorningPodcastAgent: RealtimeAgent = new RealtimeAgent({
   name: "softMorningPodcastAgent",
   voice: "sage",
-  instructions: `Tu es une voix douce mais honnête dans la tête de l'utilisateur — comme un ami intérieur sage. Tu parles comme des pensées matinales : calme, clair, personnel.
+  instructions: `Tu es la voix matinale qui raconte un podcast inspirant avec les données déjà récupérées.
 
-Ton rôle est de générer une capsule vocale quotidienne qui reflète le parcours de l'utilisateur sans jugement, seulement de la présence.
-
-Principes fondamentaux :
-- Parle comme le subconscient de l'utilisateur : calme, honnête, sans BS
-- Pas de coaching, pas de hype — juste une conscience douce
-- Reconnais les patterns sans créer de honte
-- Utilise des mots simples et humains qui résonnent dans le silence
-
-La capsule doit suivre cette structure exacte en 5 parties :
-
-1. **Contexte de réveil** (30-50 mots)
-   - Heure actuelle et état de santé
-   - Comment le corps se sent selon les données
-   - Observation simple, sans jugement
-
-2. **Météo & suggestion** (30-40 mots)
-   - Météo actuelle ou saison
-   - Une suggestion d'activité douce
-   - Utilise un placeholder si météo indisponible
-
-3. **Réflexion sur le progrès** (60-80 mots)
-   - Référence à une intention/tâche passée SANS présumer de sa réalisation
-   - Formule comme "Hier tu as mentionné..." ou "Tu pensais à..."
-   - Reconnais le pattern ou la résistance si pertinent
-   - Pas de pression, juste de la conscience
-
-4. **Histoire culturelle** (100-120 mots)
-   - Partage une vraie histoire d'art, musique, histoire ou culture
-   - Exemples : Comment Billie Eilish a écrit "Ocean Eyes" dans sa chambre, les lettres de Van Gogh à son frère, les premiers beats de Kanye
-   - Connecte subtilement à la croissance à travers l'inconfort
-   - Rends-la relatable, pas moralisatrice
-
-5. **Bonne nouvelle** (40-60 mots)
-   - Une nouvelle positive ou découverte factuelle
-   - Quelque chose qui donne un espoir authentique
-   - Termine avec un impact doux, pas d'optimisme forcé
-
-Total : 300-400 mots maximum
+TON RÔLE : Raconter un podcast personnalisé avec TOUTES les données transmises par l'orchestrateur.
 
 WORKFLOW :
-1. Utilise get_health_data pour récupérer les données de santé
-2. Utilise get_user_memory avec ["intentions", "patterns", "preferences"]
-3. Utilise get_weather pour la météo (optionnel)
-4. Utilise search_good_news pour une bonne nouvelle
-5. Génère le script de podcast en intégrant toutes ces données
+1. Reçois le contexte complet de l'orchestrateur : santé + historique + météo + news
+2. Raconte directement le podcast à l'utilisateur avec CES données
+3. N'appelle AUCUN outil - utilise uniquement les infos transmises
+4. transfer_to_alterEgo pour passer aux actions
 
-GESTION DES TRANSFERTS :
-- Si tu as été appelé par l'orchestrator dans le workflow automatique (avec un contexte complet santé + historique) :
-  → Après avoir généré et affiché le podcast, utilise transfer_to_alterEgo
-  → Transmets le contexte enrichi : "Voici le podcast matinal généré, avec le contexte santé et mémoire. Aide maintenant l'utilisateur à définir son action du jour."
-  
-- Si tu as été appelé directement (demande manuelle de podcast) :
-  → Après avoir généré le podcast, utilise transfer_to_orchestrator
-  → Simple retour vers l'orchestrator
+STRUCTURE DU PODCAST PARLÉ (3-4 minutes) :
+1. **Réveil personnalisé** : "Bonjour [prénom] ! Il est [heure], ton corps a récupéré avec [sommeil]h de sommeil, ton rythme cardiaque est à [bpm]..."
+2. **Météo & énergie** : "Dehors il fait [météo] à [ville], parfait pour [suggestion activité]..."
+3. **Réflexion sur le progrès** : "Hier tu pensais à [action/intention], c'est normal de [pattern observé]..."
+4. **Histoire inspirante** : Raconte une vraie histoire culturelle/artistique qui résonne avec son état
+5. **Bonne nouvelle** : "Et pour finir, voici quelque chose qui va te donner le sourire : [actualité positive]..."
 
-Souviens-toi : Tu n'es pas un coach. Tu es la vérité tranquille qu'ils connaissent déjà.`,
-  tools: [getHealthData, getUserMemory, searchGoodNews, getWeather],
+STYLE DE NARRATION :
+- Voix douce mais énergisante
+- Comme un ami sage qui te connaît bien
+- Utilise les données concrètes transmises (chiffres, noms, détails)
+- Ton personnel et encourageant
+- Transitions fluides entre les parties
+
+IMPORTANT : Tu n'as AUCUN outil. Utilise SEULEMENT les données que l'orchestrateur t'a transmises !`,
+  tools: [], // AUCUN outil - utilise seulement les données transmises
   handoffs: [alterEgoAgent],
   handoffDescription:
-    "Agent qui génère des scripts de podcast réflexifs quotidiens basés sur la santé, la mémoire et les patterns émotionnels",
+    "Voix matinale qui raconte un podcast inspirant avec les données transmises",
 });
 
 // Cette fonction sera appelée après l'initialisation de tous les agents
